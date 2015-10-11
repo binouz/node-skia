@@ -1,0 +1,57 @@
+{
+  'targets' : [
+    {
+      'target_name' : 'skia',
+      'cflags': [
+        '-std=c++11',
+        '-DSK_INTERNAL',
+        '-DSK_GAMMA_SRGB',
+        '-DSK_GAMMA_APPLY_TO_A8',
+        '-DSK_ALLOW_STATIC_GLOBAL_INITIALIZERS=1',
+        '-DSK_SUPPORT_GPU=1',
+        '-DSK_SUPPORT_OPENCL=0',
+        '-DSK_FORCE_DISTANCE_FIELD_TEXT=0',
+        '-DSK_SAMPLES_FOR_X',
+        '-DSK_BUILD_FOR_UNIX',
+        '-DSKIA_DLL',
+        '-DSKIA_IMPLEMENTATION=1',
+        '-DSKIA_PNG_PREFIXED',
+        '-DSK_DEVELOPER=1'
+      ],
+      'include_dirs' : [
+        "<!(node -e \"require('nan')\")",
+        'deps/skia/include/animator',
+        'deps/skia/include/c',
+        'deps/skia/include/codec',
+        'deps/skia/include/config',
+        'deps/skia/include/core',
+        'deps/skia/include/device',
+        'deps/skia/include/effects',
+        'deps/skia/include/gpu',
+        'deps/skia/include/images',
+        'deps/skia/include/pathops',
+        'deps/skia/include/pipe',
+        'deps/skia/include/ports',
+        'deps/skia/include/private',
+        'deps/skia/include/svg',
+        'deps/skia/include/utils',
+        'deps/skia/include/views',
+        'deps/skia/include/xml',
+      ],
+      'link_settings': {
+        'libraries': [
+          '${PWD}/deps/skia/libs/libskia_views.a',
+          '${PWD}/deps/skia/libs/libskia.so',
+          '-lGL',
+          '-lGLU',
+          '-lX11',
+        ],
+      },
+      'sources' : [
+        'src/init.cc',
+        'src/NodeOSWindow.cc',
+        'src/NodeSkiaTree.cc',
+      ],
+    },
+  ],
+}
