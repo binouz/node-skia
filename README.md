@@ -6,7 +6,7 @@ This node module allows you to draw with skia on a native window.
 
 For now, it looks like this :
 
-'''
+```javascript
 var skia = require("skia");
 
 skia.start(function () {
@@ -42,4 +42,4 @@ skia.start(function () {
     ]
   });
 });
-'''
+```
