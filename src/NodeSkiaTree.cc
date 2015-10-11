@@ -26,6 +26,18 @@ static SkColor GetSkColor(v8::Local<v8::Object> obj, const char *str)
   return static_cast<SkColor>(prop->Uint32Value());
 }
 
+static bool GetBool(v8::Local<v8::Object> obj, const char *str)
+{
+  if (!Nan::Has(obj, Nan::New(str).ToLocalChecked()).FromJust())
+    return false;
+
+  v8::Local<v8::Value> prop = Nan::Get(obj, Nan::New(str).ToLocalChecked()).ToLocalChecked();
+  if (!prop->IsBoolean())
+    return false;
+
+  return prop->ToBoolean()->Value();
+}
+
 NodeSkiaRectangle *NodeSkiaElement::CreateNodeSkiaRectangle(v8::Local<v8::Object> obj)
 {
   NodeSkiaRectangle * res = new NodeSkiaRectangle();
@@ -98,7 +110,8 @@ NodeSkiaRectangle::NodeSkiaRectangle()
     y_(0),
     width_(0),
     height_(0),
-    color_(0x00000000)
+    color_(0x00000000),
+    angle_(0)
 {
 }
 
@@ -113,6 +126,8 @@ void NodeSkiaRectangle::parse(v8::Local<v8::Object> obj)
   width_ = GetSkScalar(obj, "width");
   height_ = GetSkScalar(obj, "height");
   color_ = GetSkColor(obj, "color");
+  rotate_ = GetBool(obj, "rotate");
+  angle_ = GetSkScalar(obj, "angle");
 
   this->parseChildren(obj);
 }
@@ -122,13 +137,28 @@ void NodeSkiaRectangle::render(SkCanvas *canvas)
   SkPaint paint;
   SkRect rect;
 
-  rect.fLeft = x_;
-  rect.fTop = y_;
-  rect.fRight = x_ + width_;
-  rect.fBottom = y_ + height_;
-
   paint.setColor(color_);
-  canvas->drawRect(rect, paint);
+
+  if (rotate_)
+  {
+    canvas->save();
+    canvas->translate(x_ + width_ / 2, y_ + height_ / 2);
+    canvas->rotate(angle_);
+    rect.fLeft = -width_ / 2;
+    rect.fTop = -height_ / 2;
+    rect.fRight = width_ / 2;
+    rect.fBottom = height_ / 2;
+    canvas->drawRect(rect, paint);
+    canvas->restore();
+  }
+  else
+  {
+    rect.fLeft = x_;
+    rect.fTop = y_;
+    rect.fRight = x_ + width_;
+    rect.fBottom = y_ + height_;
+    canvas->drawRect(rect, paint);
+  }
 
   this->renderChildren(canvas);
 }

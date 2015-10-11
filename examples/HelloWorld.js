@@ -1,8 +1,31 @@
 var skia = require('../build/Debug/skia');
 
-skia.Start(function() {
+var elm1 = {
+    type : "rectangle",
+    x : 225,
+    y : 225,
+    width : 100,
+    height : 100,
+    color : 0xFF0000FF,
+    rotate : true,
+    angle  : 0
+};
 
-    skia.Draw({
+var elm2 = {
+    type : "rectangle",
+    x : 200,
+    y : 200,
+    width : 150,
+    height : 150,
+    color : 0xFF00FF00,
+    rotate : true,
+    angle : 0,
+    children : [
+        elm1
+    ]
+};
+
+var tree = {
         background : 0xFFFFFFFF,
         children : [
             {
@@ -13,26 +36,13 @@ skia.Start(function() {
                 height : 100,
                 color : 0xFFFF0000
             },
-            {
-                type : "rectangle",
-                x : 200,
-                y : 200,
-                width : 150,
-                height : 150,
-                color : 0xFF00FF00,
-                children : [
-                    {
-                        type : "rectangle",
-                        x : 225,
-                        y : 225,
-                        width : 100,
-                        height : 100,
-                        color : 0xFF0000FF
-                    },
-
-                ]
-            }
+            elm2
         ]
-    });
+    }
+
+skia.Start(function() {
+    elm1.angle += 0.2;
+    elm2.angle -= 0.2;
+    skia.Draw(tree);
 
 });

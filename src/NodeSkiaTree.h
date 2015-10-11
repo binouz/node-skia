@@ -44,6 +44,9 @@ class NodeSkiaRectangle : public NodeSkiaElement {
     SkScalar width_;
     SkScalar height_;
     SkColor color_;
+    bool rotate_;
+    SkScalar speed_;
+    SkScalar angle_;
 };
 
 class NodeSkiaTree : public NodeSkiaElement {
