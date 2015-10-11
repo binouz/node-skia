@@ -9,7 +9,7 @@ For now, it looks like this :
 ```javascript
 var skia = require("skia");
 
-skia.start(function () {
+skia.Start(function () {
   skia.Draw({
     background : 0xFFFFFFFF,
     children : [
