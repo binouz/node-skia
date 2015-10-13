@@ -14,7 +14,7 @@ At step 4, when building, use these commands :
 /home/user/skia/# cp -r include/* ../node-skia/deps/skia/include
 /home/user/skia/# cp out/Debug/lib/libskia.so out/Debug/libskia_views.a ../node-skia/deps/skia/libs
 /home/user/skia/# cd ../node-skia
-/home/user/node-skia# npm install
+/home/user/node-skia# npm install
 ```
 
 ## API
