@@ -105,13 +105,44 @@ void NodeSkiaElement::clearChildren()
   }
 }
 
+void NodeSkiaElement::render(SkCanvas *canvas)
+{
+  canvas->save();
+  renderElement(canvas);
+  renderChildren(canvas);
+  canvas->restore();
+}
+
+void NodeSkiaElement::parse(v8::Local<v8::Object> obj)
+{
+  top_ = 0;
+  left_ = 0;
+  right_ = 0;
+  bottom_ = 0;
+  width_ = 0;
+  height_ = 0;
+
+  if (Nan::Has(obj, Nan::New("layout").ToLocalChecked()).FromJust())
+  {
+    v8::Local<v8::Value> prop = Nan::Get(obj, Nan::New("layout").ToLocalChecked()).ToLocalChecked();
+    if (prop->IsObject())
+    {
+      v8::Local<v8::Object> layout = prop->ToObject();
+      top_ = GetSkScalar(layout, "top");
+      left_ = GetSkScalar(layout, "left");
+      right_ = GetSkScalar(layout, "right");
+      bottom_ = GetSkScalar(layout, "bottom");
+      width_ = GetSkScalar(layout, "width");
+      height_ = GetSkScalar(layout, "height");
+    }
+  }
+
+  parseElement(obj);
+  parseChildren(obj);
+}
+
 NodeSkiaRectangle::NodeSkiaRectangle()
-  : x_(0),
-    y_(0),
-    width_(0),
-    height_(0),
-    color_(0x00000000),
-    angle_(0)
+  : color_(0x00000000)
 {
 }
 
@@ -119,29 +150,18 @@ NodeSkiaRectangle::~NodeSkiaRectangle()
 {
 }
 
-void NodeSkiaRectangle::parse(v8::Local<v8::Object> obj)
+void NodeSkiaRectangle::parseElement(v8::Local<v8::Object> obj)
 {
-  x_ = GetSkScalar(obj, "x");
-  y_= GetSkScalar(obj, "y");
-  width_ = GetSkScalar(obj, "width");
-  height_ = GetSkScalar(obj, "height");
   color_ = GetSkColor(obj, "color");
-  rotate_ = GetBool(obj, "rotate");
-  angle_ = GetSkScalar(obj, "angle");
-
-  this->parseChildren(obj);
 }
 
-void NodeSkiaRectangle::render(SkCanvas *canvas)
+void NodeSkiaRectangle::renderElement(SkCanvas *canvas)
 {
   SkPaint paint;
   SkRect rect;
 
   paint.setColor(color_);
-
-  if (rotate_)
-  {
-    canvas->save();
+  /*
     canvas->translate(x_ + width_ / 2, y_ + height_ / 2);
     canvas->rotate(angle_);
     rect.fLeft = -width_ / 2;
@@ -149,18 +169,12 @@ void NodeSkiaRectangle::render(SkCanvas *canvas)
     rect.fRight = width_ / 2;
     rect.fBottom = height_ / 2;
     canvas->drawRect(rect, paint);
-    canvas->restore();
-  }
-  else
-  {
-    rect.fLeft = x_;
-    rect.fTop = y_;
-    rect.fRight = x_ + width_;
-    rect.fBottom = y_ + height_;
-    canvas->drawRect(rect, paint);
-  }
-
-  this->renderChildren(canvas);
+  */
+  rect.fLeft = left_;
+  rect.fTop = top_;
+  rect.fRight = left_ + width_;
+  rect.fBottom = top_ + height_;
+  canvas->drawRect(rect, paint);
 }
 
 NodeSkiaTree::NodeSkiaTree()
@@ -172,16 +186,12 @@ NodeSkiaTree::~NodeSkiaTree()
 {
 }
 
-void NodeSkiaTree::parse(v8::Local<v8::Object> obj)
+void NodeSkiaTree::parseElement(v8::Local<v8::Object> obj)
 {
-  color_ = GetSkColor(obj, "background");
-
-  this->parseChildren(obj);
+  color_ = GetSkColor(obj, "color");
 }
 
-void NodeSkiaTree::render(SkCanvas *canvas)
+void NodeSkiaTree::renderElement(SkCanvas *canvas)
 {
   canvas->drawColor(color_);
-
-  this->renderChildren(canvas);
 }

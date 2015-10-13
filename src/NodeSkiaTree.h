@@ -11,17 +11,26 @@ class NodeSkiaElement {
     NodeSkiaElement();
     virtual ~NodeSkiaElement();
 
-    virtual void parse(v8::Local<v8::Object> obj) = 0;
-    virtual void render(SkCanvas *canvas ) = 0;
+    void parse(v8::Local<v8::Object> obj);
+    void render(SkCanvas *canvas);
 
   protected:
 
     static NodeSkiaElement *CreateElement(v8::Local<v8::Object> element);
-    void parseChildren(v8::Local<v8::Object> obj);
-    void renderChildren(SkCanvas *canvas);
+    virtual void renderElement(SkCanvas *canvas) = 0;
+    virtual void parseElement(v8::Local<v8::Object> obj) = 0;
+
+    SkScalar top_;
+    SkScalar left_;
+    SkScalar right_;
+    SkScalar bottom_;
+    SkScalar width_;
+    SkScalar height_;
 
   private:
 
+    void parseChildren(v8::Local<v8::Object> obj);
+    void renderChildren(SkCanvas *canvas);
     void clearChildren();
 
     static NodeSkiaRectangle *CreateNodeSkiaRectangle(v8::Local<v8::Object> value);
@@ -35,18 +44,13 @@ class NodeSkiaRectangle : public NodeSkiaElement {
     NodeSkiaRectangle();
     ~NodeSkiaRectangle();
 
-    void parse(v8::Local<v8::Object> obj);
-    void render(SkCanvas *canvas);
+  protected:
+
+    void parseElement(v8::Local<v8::Object> obj);
+    void renderElement(SkCanvas *canvas);
 
   private:
-    SkScalar x_;
-    SkScalar y_;
-    SkScalar width_;
-    SkScalar height_;
     SkColor color_;
-    bool rotate_;
-    SkScalar speed_;
-    SkScalar angle_;
 };
 
 class NodeSkiaTree : public NodeSkiaElement {
@@ -55,8 +59,10 @@ class NodeSkiaTree : public NodeSkiaElement {
     NodeSkiaTree();
     ~NodeSkiaTree();
 
-    void render(SkCanvas *canvas);
-    void parse(v8::Local<v8::Object> elements);
+  protected:
+
+    void renderElement(SkCanvas *canvas);
+    void parseElement(v8::Local<v8::Object> elements);
 
   private:
     SkColor color_;
