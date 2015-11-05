@@ -21,7 +21,7 @@ class MainLoop : public Nan::AsyncWorker {
     NodeOSWindow *window_;
 };
 
-static void trampolined_draw(uv_async_t* handle, int)
+static void trampolined_draw(uv_async_t* handle)
 {
   NodeOSWindow::GetInstance()->CallJSCallback();
 }

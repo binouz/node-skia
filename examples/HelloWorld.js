@@ -1,42 +1,59 @@
-var skia = require('../build/Debug/skia');
+var skia = require('../lib/skia');
 var cssLayout = require("css-layout");
 
 var tree = {
-    children : [
+  style : {
+    width : 500,
+    height : 500
+  },
+  color : skia.color.WHITE,
+  children : [
+    {
+      type : skia.type.RECTANGLE,
+      color : skia.color.RED,
+      style : {
+        padding : 20,
+        flex: 1,
+      },
+      children : [
         {
-            type : "rectangle",
-            color : 0xFFFF0000,
-            style : {
-                width : 100,
-                padding : 20,
+          type : skia.type.OVAL,
+          color : skia.color.GREEN,
+          style : {
+            flex: 1,
+          },
+          children : [
+          ]
+        },
+        {
+          type : skia.type.RECTANGLE,
+          color : skia.color.BLUE,
+          style : {
+            flex: 1,
+            padding : 50,
+          },
+          children : [
+            {
+              type : skia.type.TEXT,
+              color : skia.color.BLACK,
+              text : "Hi boy !",
+              style : {
+              }
             },
-            children : [
-                {
-                    type : "rectangle",
-                    color : 0xFF00FF00,
-                    style : {
-                        width : 100,
-                        padding : 30,
-                    },
-                    children : [
-                        {
-                            type : "rectangle",
-                            color : 0xFF0000FF,
-                            style : {
-                                width : 100,
-                            }
-                        }
-                    ]
-                }
-            ]
+            {
+              type : skia.type.CIRCLE,
+              color : skia.color.WHITE,
+              style : {
+                flex: 1,
+              },
+              children : [
+              ]
+            },
+          ]
         }
-    ],
-    style : {
-        padding : 10,
-        width : 500,
-        height : 500
-    },
-    color : 0xFFFFFFFF
+      ]
+    }
+  ]
 }
 
 cssLayout(tree);
@@ -44,5 +61,5 @@ cssLayout(tree);
 console.log(JSON.stringify(tree, null, 4));
 
 skia.Start(function() {
-    skia.Draw(tree);
+  skia.Draw(tree);
 });

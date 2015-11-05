@@ -1,8 +1,5 @@
 #include "NodeOSWindow.h"
 
-#include "NodeSkiaCanvas.h"
-#include "NodeSkiaPaint.h"
-
 void Start(const Nan::FunctionCallbackInfo<v8::Value>& args) {
   if (args.Length() != 1) {
     Nan::ThrowError("Wrong number of arguments");
