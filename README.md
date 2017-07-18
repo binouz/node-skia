@@ -10,14 +10,8 @@ This node module allows you to draw with skia on a native window.
 Prerequisites : npm, node and node-gyp installed
 
 ```shell
-# npm install
-# ./configure.sh --platform=$PLATFORM
-# ./build.sh
+# make
 ```
-
-$PLATFORM can have the following values :
-- egl : Cross compile for arm and egl
-- sdl : Host build with SDL
 
 ## API
 
