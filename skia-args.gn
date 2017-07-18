@@ -1,0 +1,10 @@
+skia_use_egl=true
+skia_use_fontconfig=true
+skia_use_freetype=true
+skia_use_icu=true
+skia_use_piex=true
+skia_use_zlib=true
+skia_enable_pdf=false
+skia_enable_spirv_validation=false
+skia_enable_tools=false
+skia_enable_vulkan_debug_layers=false

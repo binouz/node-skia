@@ -1,12 +1,12 @@
 {
-  "name": "skia",
-  "version": "0.0.0",
-  "description": "Skia binding for node",
-  "private": true,
-  "dependencies": {
-    "bindings": "~1.2.1",
-    "nan": "^2.0.0",
-    "css-layout": "^1.0.0"
-  },
-  "gypfile": true
+    "name": "node-skia",
+    "version": "0.0.1",
+    "description": "Skia binding for node",
+    "private": true,
+    "dependencies": {
+        "bindings": "~1.2.1",
+        "nan": "^2.0.0",
+        "css-layout": "^1.0.0"
+    },
+    "gypfile": true
 }
