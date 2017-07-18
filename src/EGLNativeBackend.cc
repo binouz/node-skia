@@ -195,7 +195,7 @@ bool EGLNativeBackend::Initialise() {
 
 void EGLNativeBackend::Reset() {
   glViewport(0, 0, width_, height_);
-  glClearColor(0.0, 0.0, 1.0, 1.0);
+  glClearColor(0.0, 0.0, 0.0, 0.0);
   glClearStencil(0);
   glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   eglSwapBuffers(display_, surface_);

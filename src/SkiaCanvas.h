@@ -13,6 +13,9 @@ class SkiaCanvas : public Nan::ObjectWrap {
     static NAN_METHOD(New);
     static NAN_METHOD(DrawColor);
     static NAN_METHOD(DrawRect);
+    static NAN_METHOD(DrawPoint);
+    static NAN_METHOD(DrawLine);
+    static NAN_METHOD(DrawText);
 
     static v8::Local<v8::Object> CreateObject(SkCanvas* wrapped);
 

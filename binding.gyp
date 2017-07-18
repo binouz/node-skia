@@ -31,7 +31,9 @@
           '${PWD}/skia/out/Static/libskia.a',
           '-lX11',
           '-lEGL',
-          '-lGLESv2'
+          '-lGLESv2',
+          '-lfontconfig',
+          '-lfreetype'
         ],
       },
       'sources' : [

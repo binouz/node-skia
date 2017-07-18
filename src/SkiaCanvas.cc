@@ -7,6 +7,9 @@ NAN_MODULE_INIT(SkiaCanvas::Init) {
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   Nan::SetPrototypeMethod(tpl, "drawColor", SkiaCanvas::DrawColor);
   Nan::SetPrototypeMethod(tpl, "drawRect", SkiaCanvas::DrawRect);
+  Nan::SetPrototypeMethod(tpl, "drawPoint", SkiaCanvas::DrawPoint);
+  Nan::SetPrototypeMethod(tpl, "drawLine", SkiaCanvas::DrawLine);
+  Nan::SetPrototypeMethod(tpl, "drawText", SkiaCanvas::DrawText);
   constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
   Nan::Set(target, Nan::New("SkiaCanvas").ToLocalChecked(),
            Nan::GetFunction(tpl).ToLocalChecked());
@@ -49,7 +52,7 @@ NAN_METHOD(SkiaCanvas::DrawColor) {
   wrapper->Get()->drawColor(static_cast<SkColor>(info[0]->Uint32Value()));
 }
 
-NAN_METHOD(::SkiaCanvas::DrawRect) {
+NAN_METHOD(SkiaCanvas::DrawRect) {
   SkiaCanvas* wrapper = Nan::ObjectWrap::Unwrap<SkiaCanvas>(info.Holder());
 
   if (!wrapper->Get()) {
@@ -58,13 +61,13 @@ NAN_METHOD(::SkiaCanvas::DrawRect) {
   }
 
   if (info.Length() != 5) {
-    Nan::ThrowError("Invalid number of argument for canvas.drawColor !");
+    Nan::ThrowError("Invalid number of argument for canvas.drawRect !");
     return;
   }
 
   if (!info[0]->IsNumber() || !info[1]->IsNumber() || !info[2]->IsNumber() ||
       !info[3]->IsNumber() || !info[4]->IsNumber()) {
-    Nan::ThrowError("Invalid argument for canvas.drawColor !");
+    Nan::ThrowError("Invalid argument for canvas.drawRect !");
     return;
   }
 
@@ -79,6 +82,96 @@ NAN_METHOD(::SkiaCanvas::DrawRect) {
   rect.fBottom = rect.fTop + static_cast<SkScalar>(info[4]->ToNumber()->Value());
 
   wrapper->Get()->drawRect(rect, paint);
+}
+
+NAN_METHOD(SkiaCanvas::DrawPoint) {
+  SkiaCanvas* wrapper = Nan::ObjectWrap::Unwrap<SkiaCanvas>(info.Holder());
+
+  if (!wrapper->Get()) {
+    Nan::ThrowError("Drawing on null canvas !");
+    return;
+  }
+
+  if (info.Length() != 3) {
+    Nan::ThrowError("Invalid number of argument for canvas.drawColor !");
+    return;
+  }
+
+  if (!info[0]->IsNumber() || !info[1]->IsNumber() || !info[2]->IsNumber()) {
+    Nan::ThrowError("Invalid argument for canvas.drawPoint !");
+    return;
+  }
+
+  SkPaint paint;
+
+  paint.setColor(static_cast<SkColor>(info[0]->Uint32Value()));
+
+  wrapper->Get()->drawPoint(static_cast<SkScalar>(info[1]->ToNumber()->Value()),
+                            static_cast<SkScalar>(info[2]->ToNumber()->Value()),
+                            paint);
+}
+
+NAN_METHOD(SkiaCanvas::DrawLine) {
+  SkiaCanvas* wrapper = Nan::ObjectWrap::Unwrap<SkiaCanvas>(info.Holder());
+
+  if (!wrapper->Get()) {
+    Nan::ThrowError("Drawing on null canvas !");
+    return;
+  }
+
+  if (info.Length() != 5) {
+    Nan::ThrowError("Invalid number of argument for canvas.drawLine !");
+    return;
+  }
+
+  if (!info[0]->IsNumber() || !info[1]->IsNumber() || !info[2]->IsNumber() ||
+      !info[3]->IsNumber() || !info[4]->IsNumber()) {
+    Nan::ThrowError("Invalid argument for canvas.drawLine !");
+    return;
+  }
+
+  SkPaint paint;
+  SkPoint p1, p2;
+
+  paint.setColor(static_cast<SkColor>(info[0]->Uint32Value()));
+
+  p1.fX = static_cast<SkScalar>(info[1]->ToNumber()->Value());
+  p1.fY = static_cast<SkScalar>(info[2]->ToNumber()->Value());
+  p2.fX = static_cast<SkScalar>(info[3]->ToNumber()->Value());
+  p2.fY = static_cast<SkScalar>(info[4]->ToNumber()->Value());
+
+  wrapper->Get()->drawLine(p1, p2, paint);
+}
+
+NAN_METHOD(SkiaCanvas::DrawText) {
+  SkiaCanvas* wrapper = Nan::ObjectWrap::Unwrap<SkiaCanvas>(info.Holder());
+
+  if (!wrapper->Get()) {
+    Nan::ThrowError("Drawing on null canvas !");
+    return;
+  }
+
+  if (info.Length() != 4) {
+    Nan::ThrowError("Invalid number of argument for canvas.drawLine !");
+    return;
+  }
+
+  if (!info[0]->IsNumber() || !info[1]->IsNumber() || !info[2]->IsNumber() ||
+      !info[3]->IsString()) {
+    Nan::ThrowError("Invalid argument for canvas.drawLine !");
+    return;
+  }
+
+  SkPaint paint;
+  paint.setColor(static_cast<SkColor>(info[0]->Uint32Value()));
+
+  Nan::Utf8String val(info[3]);
+  std::string str(*val);
+
+  wrapper->Get()->drawText(str.c_str(), str.size(),
+                           static_cast<SkColor>(info[1]->ToNumber()->Value()),
+                           static_cast<SkColor>(info[2]->ToNumber()->Value()),
+                           paint);
 }
 
 v8::Local<v8::Object> SkiaCanvas::CreateObject(SkCanvas* wrapped)  {
