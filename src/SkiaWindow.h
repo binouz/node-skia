@@ -5,6 +5,7 @@
 
 #include <nan.h>
 
+#include "SkiaView.h"
 #include "EGLNativeBackend.h"
 
 class SkCanvas;
@@ -52,6 +53,7 @@ class SkiaWindow : public Nan::ObjectWrap
     static NAN_METHOD(Stop);
     static NAN_METHOD(Release);
     static NAN_METHOD(SetDrawHandler);
+    static NAN_METHOD(SetView);
     static NAN_METHOD(onMainLoopEnd);
 
     static inline Nan::Persistent<v8::Function>& constructor() {
@@ -69,6 +71,7 @@ class SkiaWindow : public Nan::ObjectWrap
     void Release();
     void SetDrawHandler(v8::Local<v8::Function> handler);
     void CallDrawHandler(SkCanvas *canvas);
+    void SetView(v8::Local<v8::Object> view);
 
     EGLNativeBackend* backend_;
     MainLoop *loop_;
@@ -76,7 +79,7 @@ class SkiaWindow : public Nan::ObjectWrap
     Nan::Callback draw_handler_;
     bool has_draw_handler_;
 
-    bool has_view_;
+    SkiaView *view_;
 
     uv_async_t async_;
     uv_cond_t cond_;

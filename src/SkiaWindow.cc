@@ -108,6 +108,7 @@ NAN_MODULE_INIT(SkiaWindow::Init) {
   Nan::SetPrototypeMethod(tpl, "stop", SkiaWindow::Stop);
   Nan::SetPrototypeMethod(tpl, "release", SkiaWindow::Release);
   Nan::SetPrototypeMethod(tpl, "setDrawHandler", SkiaWindow::SetDrawHandler);
+  Nan::SetPrototypeMethod(tpl, "setView", SkiaWindow::SetView);
 
   constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
   Nan::Set(target, Nan::New("Window").ToLocalChecked(),
@@ -172,6 +173,22 @@ NAN_METHOD(SkiaWindow::SetDrawHandler) {
   window->SetDrawHandler(info[0].As<v8::Function>());
 }
 
+NAN_METHOD(SkiaWindow::SetView) {
+  SkiaWindow* window = Nan::ObjectWrap::Unwrap<SkiaWindow>(info.Holder());
+
+  if (info.Length() != 1) {
+    Nan::ThrowError("Invalid number of argument for setDrawHandler !");
+    return;
+  }
+
+  if (!info[0]->IsObject()) {
+    Nan::ThrowError("Invalid argument for setDrawHandler !");
+    return;
+  }
+
+  window->SetView(info[0].As<v8::Object>());
+}
+
 typedef struct {
     SkiaWindow *window;
     SkCanvas *canvas;
@@ -187,7 +204,7 @@ SkiaWindow::SkiaWindow(int width, int height)
   : backend_(EGLNativeBackend::CreateBackend(width, height)),
     loop_(NULL),
     has_draw_handler_(false),
-    has_view_(false),
+    view_(NULL),
     width_(width),
     height_(height),
     running_(false) {
@@ -249,22 +266,26 @@ void SkiaWindow::SetDrawHandler(v8::Local<v8::Function> handler) {
 }
 
 void SkiaWindow::Draw(SkCanvas *canvas) {
-  if (has_draw_handler_) {
+  if (has_draw_handler_ || view_) {
     ((AsyncData*)async_.data)->canvas = canvas;
     uv_async_send(&async_);
     uv_cond_wait(&cond_, &mutex_);
   }
-  if (has_view_) {
-    // view_->Draw(canvas);
-  }
 }
 
 void SkiaWindow::CallDrawHandler(SkCanvas *canvas) {
+  if (view_)
+    view_->Draw(canvas);
+
   if (has_draw_handler_) {
     Nan::HandleScope scope;
     v8::Local<v8::Value> argv[] = { SkiaCanvas::CreateObject(canvas) };
     draw_handler_.Call(1, argv);
-    // usleep(1000);
-    uv_cond_signal(&cond_);
   }
+
+  uv_cond_signal(&cond_);
+}
+
+void SkiaWindow::SetView(v8::Local<v8::Object> view) {
+  view_ = Nan::ObjectWrap::Unwrap<SkiaView>(view);
 }

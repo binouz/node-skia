@@ -1,17 +1,21 @@
 var Skia = require("../build/Release/skia");
-var x = 0;
-var window = new Skia.Window(1280, 720);
-window.setDrawHandler(function(canvas) {
-    canvas.drawColor(0xFF000000);
-    canvas.drawText(0xFFFFFFFF, x, 200, "Hello World !");
-    x = (x + 10) % (1280 - 50);
+
+var Window = Skia.Window;
+var View = Skia.View;
+
+var view = new View(0xFFFFFFFF);
+var win = new Window(1280, 720);
+win.setView(view);
+win.start();
+view.update({
+    style : {
+        color : 0xFF000000,
+        x: 100,
+        y: 100,
+        fontSize : 30
+    },
+    children : [],
+    content: "Hello World !"
 });
-window.start();
 // window.stop();
 // window.release();
-
-setTimeout(function() {
-    console.log("Stop !")
-    window.stop();
-    window.release();
-}, 10000);
