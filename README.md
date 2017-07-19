@@ -1,13 +1,11 @@
 # node-skia
 
-This node module allows you to draw with skia on a native window.
+This node module allows you to draw with skia on a native EGL window.
 
 ## Build
 
 ### Linux
 
-
-Prerequisites : npm, node and node-gyp installed
 
 ```shell
 # make
@@ -15,42 +13,55 @@ Prerequisites : npm, node and node-gyp installed
 
 ## API
 
-For now, it looks like this :
+- Spawn a native EGL window to draw on
 
 ```javascript
 var skia = require("skia");
+var Window = skia.Window;
 
-skia.Start(function () {
-  skia.Draw({
-    background : 0xFFFFFFFF,
-    children : [
-      {
-        type : "rectangle",
-        x : 10,
-        y : 10,
-        width : 100,
-        height : 100,
-        color : 0xFFFF0000
-      },
-      {
-        type : "rectangle",
-        x : 200,
-        y : 200,
-        width : 150,
-        height : 150,
-        color : 0xFF00FF00,
-        children : [
-          {
-            type : "rectangle",
-            x : 225,
-            y : 225,
-            width : 100,
-            height : 100,
-            color : 0xFF0000FF
-          },
-        ]
-      }
-    ]
-  });
+var win = new Window(1280, 720);
+win.start();
+win.stop();
+win.release();
+```
+
+- Draw at each frame directly on canvas :
+
+```javascript
+var skia = require("skia");
+var Window = skia.Window;
+
+var win = new Window(1280, 720);
+win.setDrawHandler(function(canvas) {
+    canvas.drawColor(0xFFFFFFFF);
+    canvas.drawText(0xFF000000, 100, 100, "Hello World !");
 });
+win.start();
+win.stop();
+win.release();
+```
+
+- Use asynchronous view system :
+
+```javascript
+var skia = require("skia");
+var Window = skia.Window;
+var View = skia.View;
+
+var View = new View(0xFFFFFFFF);
+var win = new Window(1280, 720);
+win.setView(view);
+win.start();
+view.update({
+    style : {
+        color : 0xFF000000,
+        x: 100,
+        y: 100,
+        fontSize : 30
+    },
+    children : [],
+    content: "Hello World !"
+});
+win.stop();
+win.release();
 ```
