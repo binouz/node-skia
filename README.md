@@ -65,3 +65,16 @@ view.update({
 win.stop();
 win.release();
 ```
+
+## TODO
+
+We have a basic POC today, but to have a complete library we need to :
+- be fully CSS 3 compliant
+- implement a real layout engine
+- implement transforms
+- implement transitions
+- add support for media element : audio, video, MSE
+
+Other ideas :
+- DRM support through EME
+- Develop a framework with more complex elements
