@@ -12,9 +12,6 @@
 #include <SkSurfaceProps.h>
 #include <SkCanvas.h>
 
-#include <iostream>
-#include <atomic>
-
 SkiaWindow::MainLoop::MainLoop(Nan::Callback *cb,
                                EGLNativeInterface* backend,
                                SkiaWindow *window,
@@ -29,7 +26,6 @@ SkiaWindow::MainLoop::MainLoop(Nan::Callback *cb,
 }
 
 SkiaWindow::MainLoop::~MainLoop() {
-  std::cout << "SkiaWindow::MainLoop::~MainLoop" << std::endl;
 }
 
 void SkiaWindow::MainLoop::Execute() {

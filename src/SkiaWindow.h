@@ -7,8 +7,8 @@
 
 #include <nan.h>
 
-#include "SkiaView.h"
-#include "EGLNativeInterface.h"
+#include "view/SkiaView.h"
+#include "interface/EGLNativeInterface.h"
 
 class SkCanvas;
 

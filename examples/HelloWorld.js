@@ -2,67 +2,66 @@ var Skia = require("../build/Release/skia");
 
 var Window = Skia.Window;
 var View = Skia.View;
+var Node = Skia.ViewNode;
 
-var view = new View(0xFFFFFFFF);
 var win = new Window(1280, 720);
+var view = new View(0xFFFFFFFF);
+var root = new Node();
+var header = new Node();
+var body = new Node();
+var footer = new Node();
 
-var content = { style : {}, content : "", children : [] };
-var latest;
+header.text = "header";
+header.style = {
+    color : 0xFF000000,
+    fontSize : 30,
+    width : 1280,
+    height : 200,
+    marginTop : 10,
+    marginLeft : 10,
+    marginRight : 10,
+    marginBottom : 10,
+    border : 2
+};
+body.text = "body";
+body.style = {
+    color : 0xFF000000,
+    fontSize : 30,
+    width : 1280,
+    height : 320,
+    top : 200,
+    marginTop : 10,
+    marginLeft : 10,
+    marginRight : 10,
+    marginBottom : 10
+};
+footer.text = "footer";
+footer.style = {
+    color : 0xFF000000,
+    fontSize : 30,
+    width : 1280,
+    height : 200,
+    top : 520,
+    marginTop : 10,
+    marginLeft : 10,
+    marginRight : 10,
+    marginBottom : 10,
+    border : 2
+};
 
-function createElement() {
-    return {
-        style : {
-            color : 0xFF000000,
-            x: 0,
-            y: 0,
-            fontSize : 30
-        },
-        content: "Hello World !",
-        children : []
-    }
-}
+root.text = "ROOT";
+root.style = {
+    backgroundColor: 0x6600FF00,
+    width : 1280,
+    height : 720
+};
+root.children = [ header, body, footer ];
+
+view.setRoot(root);
 
 win.setView(view);
 win.start();
-
-view.update(content);
-
 win.on("close", function() {
-    console.log("CLOSE");
     win.stop();
     win.release();
-});
-
-win.on("key", function(data) {
-    console.log("KEY :", data);
-
-    if (latest) {
-        if (data.keycode == 114) {
-            latest.style.x += 10;
-        } else if (data.keycode == 113) {
-            latest.style.x -= 10;
-        } else if (data.keycode == 111) {
-            latest.style.y -= 10;
-        } else if (data.keycode == 116) {
-            latest.style.y += 10;
-        }
-    }
-
-    console.log(content);
-
-    view.update(content);
-});
-
-win.on("click", function(data) {
-    console.log("CLICK :", data);
-
-    var elm = createElement();
-
-    elm.style.x = data.x;
-    elm.style.y = data.y;
-
-    latest = elm;
-
-    content.children.push(elm);
-    view.update(content);
 });

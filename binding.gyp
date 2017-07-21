@@ -45,10 +45,10 @@
         'src/init.cc',
         'src/SkiaWindow.cc',
         'src/SkiaCanvas.cc',
-        'src/SkiaView.cc',
-        'src/SkiaViewElement.cc',
-        'src/SkiaViewStyle.cc',
-        'src/EGLNativeInterface.cc',
+        'src/view/SkiaView.cc',
+        'src/view/SkiaViewNode.cc',
+        'src/view/SkiaViewStyle.cc',
+        'src/interface/EGLNativeInterface.cc',
       ],
       'conditions' : [
         [
@@ -60,7 +60,7 @@
               ]
             },
             'sources' : [
-              'src/platforms/x11/EGLNativeInterfaceX11.cc'
+              'src/interface/x11/EGLNativeInterfaceX11.cc'
             ]
           }
         ],
@@ -73,7 +73,7 @@
               ]
             },
             'sources' : [
-              'src/platforms/fbdev/EGLNativeInterfaceFbdev.cc'
+              'src/interface/fbdev/EGLNativeInterfaceFbdev.cc'
             ]
           }
         ]
