@@ -1,10 +1,5 @@
 #include "EGLNativeInterface.h"
 
-#include <iostream>
-
-#define USE_FBDEV_INTERFACE 0
-#define USE_X11_INTERFACE 1
-
 static const EGLint configAttribs[] = {
   EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
   EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
@@ -21,18 +16,6 @@ static const EGLint contextAttribs[] = {
   EGL_CONTEXT_CLIENT_VERSION, 2,
   EGL_NONE
 };
-
-#if USE_FBDEV_INTERFACE
-#include "EGLNativeInterfaceFbdev.cc"
-#elif USE_X11_INTERFACE
-#include "EGLNativeInterfaceX11.cc"
-#else
-#error "No native interface available..."
-#endif
-
-EGLNativeInterface *EGLNativeInterface::CreateBackend(int width, int height, EGLNativeInterface::EventClient *client) {
-  return new EGLNativeInterfaceX11(width, height, client);
-}
 
 EGLNativeInterface::EGLNativeInterface(int width, int height)
   : display_(EGL_NO_DISPLAY),
@@ -66,10 +49,8 @@ bool EGLNativeInterface::Initialise() {
   if (context_ == EGL_NO_CONTEXT) {
     context_ = eglCreateContext(display_, config_, EGL_NO_CONTEXT, contextAttribs);
 
-    if (context_ == EGL_NO_CONTEXT) {
-      std::cout << "EGLNativeInterface::Initialise: eglCreateContext failed" << std::endl;
+    if (context_ == EGL_NO_CONTEXT)
       return false;
-    }
   }
 
   if (surface_ == EGL_NO_SURFACE) {
@@ -79,10 +60,8 @@ bool EGLNativeInterface::Initialise() {
       return false;
   }
 
-  if (!eglMakeCurrent(display_, surface_, surface_, context_)) {
-    std::cout << "EGLNativeInterface::Initialise: eglMakeCurrent failed" << std::endl;
+  if (!eglMakeCurrent(display_, surface_, surface_, context_))
     return false;
-  }
 
   // eglSwapInterval(display_, 1);
 

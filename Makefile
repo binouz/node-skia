@@ -1,5 +1,7 @@
 all: install
 
+EGL_PLATFORM ?= x11
+
 depot_tools:
 	@if [ ! -d depot_tools ]; then \
 	    git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git; \
@@ -20,12 +22,13 @@ skia: skia-configure
 	@PATH=`pwd`/depot_tools:$$PATH ninja -C skia/out/Static libskia.a
 
 build: skia
+	@echo "{\n  'variables': {\n    'egl_platform' : \""$(EGL_PLATFORM)"\"\n  }\n}" > config.gypi
 	@npm build
 
 install: build
 	@npm install
 
 clean:
-	@rm -rf build depot_tools node_modules skia
+	@rm -rf build depot_tools node_modules skia config.gypi
 
 .PHONY: depot_tools skia-checkout skia-configure skia prepare build

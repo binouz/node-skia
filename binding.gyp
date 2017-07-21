@@ -1,4 +1,10 @@
 {
+  'includes': [
+    'config.gypi',
+  ],
+  'variables' : {
+      'egl_platform': ''
+  },
   'targets' : [
     {
       'target_name' : 'skia',
@@ -29,7 +35,6 @@
       'link_settings': {
         'libraries': [
           '${PWD}/skia/out/Static/libskia.a',
-          '-lX11',
           '-lEGL',
           '-lGLESv2',
           '-lfontconfig',
@@ -45,6 +50,34 @@
         'src/SkiaViewStyle.cc',
         'src/EGLNativeInterface.cc',
       ],
+      'conditions' : [
+        [
+          'egl_platform=="x11"',
+          {
+            'link_settings': {
+              'libraries': [
+                '-lX11'
+              ]
+            },
+            'sources' : [
+              'src/platforms/x11/EGLNativeInterfaceX11.cc'
+            ]
+          }
+        ],
+        [
+          'egl_platform=="fbdev"',
+          {
+            'link_settings': {
+              'libraries': [
+                # TODO
+              ]
+            },
+            'sources' : [
+              'src/platforms/fbdev/EGLNativeInterfaceFbdev.cc'
+            ]
+          }
+        ]
+      ]
     },
   ],
 }

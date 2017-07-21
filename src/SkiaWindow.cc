@@ -237,7 +237,7 @@ void SkiaWindow::EventThreadJumper(uv_async_t* handle) {
 }
 
 SkiaWindow::SkiaWindow(int width, int height)
-  : egl_interface_(EGLNativeInterface::CreateBackend(width, height, this)),
+  : egl_interface_(EGLNativeInterface::CreateInterface(width, height, this)),
     loop_(NULL),
     has_draw_handler_(false),
     view_(NULL),

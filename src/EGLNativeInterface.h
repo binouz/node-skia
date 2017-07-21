@@ -27,7 +27,7 @@ class EGLNativeInterface {
         virtual void EmitEvent(Event* event) = 0;
     };
 
-    static EGLNativeInterface *CreateBackend(int width, int height, EventClient* client);
+    static EGLNativeInterface *CreateInterface(int width, int height, EventClient* client);
 
     bool Initialise();
     void Reset();
