@@ -2,21 +2,25 @@
 # define SKIAWINDOW_H_
 
 #include <atomic>
+#include <map>
+#include <vector>
 
 #include <nan.h>
 
 #include "SkiaView.h"
-#include "EGLNativeBackend.h"
+#include "EGLNativeInterface.h"
 
 class SkCanvas;
 
-class SkiaWindow : public Nan::ObjectWrap
+class SkiaWindow : public EGLNativeInterface::EventClient,
+                   public Nan::ObjectWrap
 {
   public:
 
     static NAN_MODULE_INIT(Init);
 
     void Draw(SkCanvas *canvas);
+    void EmitEvent(EGLNativeInterface::Event* event);
 
   protected:
 
@@ -30,8 +34,9 @@ class SkiaWindow : public Nan::ObjectWrap
       public :
 
         MainLoop(Nan::Callback *cb,
-                 EGLNativeBackend* backend,
+                 EGLNativeInterface* backend,
                  SkiaWindow *window,
+                 uv_mutex_t *mutex,
                  int width, int height);
         ~MainLoop();
 
@@ -39,8 +44,10 @@ class SkiaWindow : public Nan::ObjectWrap
 
       private:
 
-        EGLNativeBackend* backend_;
+        EGLNativeInterface* egl_interface_;
         SkiaWindow* window_;
+
+        uv_mutex_t *mutex_;
 
         int width_;
         int height_;
@@ -55,13 +62,15 @@ class SkiaWindow : public Nan::ObjectWrap
     static NAN_METHOD(SetDrawHandler);
     static NAN_METHOD(SetView);
     static NAN_METHOD(onMainLoopEnd);
+    static NAN_METHOD(On);
 
     static inline Nan::Persistent<v8::Function>& constructor() {
       static Nan::Persistent<v8::Function> my_constructor;
       return my_constructor;
     }
 
-    static void ThreadJumper(uv_async_t* handle);
+    static void DrawThreadJumper(uv_async_t* handle);
+    static void EventThreadJumper(uv_async_t* handle);
 
     explicit SkiaWindow(int width, int height);
     ~SkiaWindow();
@@ -70,10 +79,14 @@ class SkiaWindow : public Nan::ObjectWrap
     void Stop();
     void Release();
     void SetDrawHandler(v8::Local<v8::Function> handler);
-    void CallDrawHandler(SkCanvas *canvas);
+    void CallDrawHandlerOnNodeThread(SkCanvas *canvas);
     void SetView(v8::Local<v8::Object> view);
+    void AddEventHandler(std::string name, v8::Local<v8::Function> handler);
+    void RemoveEventHandler(std::string name, v8::Local<v8::Function> handler);
+    void CallEventHandlersOnNodeThread(EGLNativeInterface::Event* event);
+    void ClearEventHandlers();
 
-    EGLNativeBackend* backend_;
+    EGLNativeInterface* egl_interface_;
     MainLoop *loop_;
 
     Nan::Callback draw_handler_;
@@ -81,12 +94,18 @@ class SkiaWindow : public Nan::ObjectWrap
 
     SkiaView *view_;
 
-    uv_async_t async_;
-    uv_cond_t cond_;
-    uv_mutex_t mutex_;
+    uv_async_t event_async_;
+    uv_mutex_t event_mutex_;
+    uv_async_t draw_async_;
+    uv_cond_t draw_cond_;
+    uv_mutex_t draw_cond_mutex_;
+    uv_mutex_t draw_mutex_;
 
     int width_;
     int height_;
+
+    typedef std::vector<Nan::Callback*> EventHandlerVector;
+    std::map<std::string, EventHandlerVector> event_handlers_;
 
     std::atomic<bool> running_;
 };

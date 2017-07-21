@@ -16,12 +16,14 @@
 #include <atomic>
 
 SkiaWindow::MainLoop::MainLoop(Nan::Callback *cb,
-                               EGLNativeBackend* backend,
+                               EGLNativeInterface* backend,
                                SkiaWindow *window,
+                               uv_mutex_t *mutex,
                                int width, int height)
   : AsyncWorker(cb),
-    backend_(backend),
+    egl_interface_(backend),
     window_(window),
+    mutex_(mutex),
     width_(width),
     height_(height) {
 }
@@ -40,17 +42,17 @@ void SkiaWindow::MainLoop::Execute() {
   sk_sp<SkColorSpace> color_space = nullptr;
   SkSurfaceProps surface_props = SkSurfaceProps::kLegacyFontHost_InitType;
 
-  if (!backend_) {
+  if (!egl_interface_) {
     Nan::ThrowError("No backend for window !");
     return;
   }
 
-  if (!backend_->Initialise()) {
+  if (!egl_interface_->Initialise()) {
     Nan::ThrowError("EGL initialisation failed !");
     return;
   }
 
-  backend_->Reset();
+  egl_interface_->Reset();
 
   interface.reset(GrGLCreateNativeInterface());
   if (!interface.get()) {
@@ -71,8 +73,8 @@ void SkiaWindow::MainLoop::Execute() {
 
   GrBackendRenderTarget backendRT(width_,
                                   height_,
-                                  backend_->SampleCount(),
-                                  backend_->StencilBits(),
+                                  egl_interface_->SampleCount(),
+                                  egl_interface_->StencilBits(),
                                   config,
                                   fbInfo);
 
@@ -87,16 +89,19 @@ void SkiaWindow::MainLoop::Execute() {
     return;
   }
 
+  egl_interface_->SetupEvents();
+
   while (window_->Running()) {
     SkCanvas *canvas = surface->getCanvas();
+    uv_mutex_lock(mutex_);
     window_->Draw(canvas);
     canvas->flush();
+    uv_mutex_unlock(mutex_);
     context->flush();
-    backend_->SwapBuffers();
+    egl_interface_->SwapBuffers();
+    egl_interface_->ProcessEvents();
     usleep(40000);
   }
-
-  std::cout << "Loop done" << std::endl;
 }
 
 NAN_MODULE_INIT(SkiaWindow::Init) {
@@ -109,6 +114,7 @@ NAN_MODULE_INIT(SkiaWindow::Init) {
   Nan::SetPrototypeMethod(tpl, "release", SkiaWindow::Release);
   Nan::SetPrototypeMethod(tpl, "setDrawHandler", SkiaWindow::SetDrawHandler);
   Nan::SetPrototypeMethod(tpl, "setView", SkiaWindow::SetView);
+  Nan::SetPrototypeMethod(tpl, "on", SkiaWindow::On);
 
   constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
   Nan::Set(target, Nan::New("Window").ToLocalChecked(),
@@ -189,19 +195,49 @@ NAN_METHOD(SkiaWindow::SetView) {
   window->SetView(info[0].As<v8::Object>());
 }
 
+NAN_METHOD(SkiaWindow::On) {
+  SkiaWindow* window = Nan::ObjectWrap::Unwrap<SkiaWindow>(info.Holder());
+
+  if (info.Length() != 2) {
+    Nan::ThrowError("Invalid number of argument for Window.On !");
+    return;
+  }
+
+  if (!info[0]->IsString() || !info[1]->IsFunction()) {
+    Nan::ThrowError("Invalid argument for Window.On !");
+    return;
+  }
+
+  Nan::Utf8String val(info[0]);
+
+  window->AddEventHandler(std::string(*val), info[1].As<v8::Function>());
+}
+
 typedef struct {
     SkiaWindow *window;
     SkCanvas *canvas;
-} AsyncData;
+} DrawAsyncData;
 
-void SkiaWindow::ThreadJumper(uv_async_t* handle) {
-  if (handle && handle->data && ((AsyncData*)handle->data)->canvas) {
-    ((AsyncData*)handle->data)->window->CallDrawHandler(((AsyncData*)handle->data)->canvas);
+void SkiaWindow::DrawThreadJumper(uv_async_t* handle) {
+  if (handle && handle->data && ((DrawAsyncData*)handle->data)->canvas) {
+    ((DrawAsyncData*)handle->data)->window->CallDrawHandlerOnNodeThread(((DrawAsyncData*)handle->data)->canvas);
+  }
+}
+
+typedef struct {
+    SkiaWindow *window;
+    EGLNativeInterface::Event* event;
+} EventAsyncData;
+
+void SkiaWindow::EventThreadJumper(uv_async_t* handle) {
+  if (handle && handle->data) {
+    ((EventAsyncData*)handle->data)->window->CallEventHandlersOnNodeThread(
+      ((EventAsyncData*)handle->data)->event);
   }
 }
 
 SkiaWindow::SkiaWindow(int width, int height)
-  : backend_(EGLNativeBackend::CreateBackend(width, height)),
+  : egl_interface_(EGLNativeInterface::CreateBackend(width, height, this)),
     loop_(NULL),
     has_draw_handler_(false),
     view_(NULL),
@@ -209,13 +245,20 @@ SkiaWindow::SkiaWindow(int width, int height)
     height_(height),
     running_(false) {
 
-  async_.data = new AsyncData();
-  ((AsyncData*)async_.data)->window = this;
-  ((AsyncData*)async_.data)->canvas = NULL;
+  draw_async_.data = new DrawAsyncData();
+  ((DrawAsyncData*)draw_async_.data)->window = this;
+  ((DrawAsyncData*)draw_async_.data)->canvas = NULL;
 
-  uv_cond_init(&cond_);
-  uv_mutex_init(&mutex_);
-  uv_async_init(uv_default_loop(), &async_, &SkiaWindow::ThreadJumper);
+  event_async_.data = new EventAsyncData();
+  ((EventAsyncData*)event_async_.data)->window = this;
+  ((EventAsyncData*)event_async_.data)->event = NULL;
+
+  uv_mutex_init(&event_mutex_);
+  uv_cond_init(&draw_cond_);
+  uv_mutex_init(&draw_cond_mutex_);
+  uv_mutex_init(&draw_mutex_);
+  uv_async_init(uv_default_loop(), &draw_async_, &SkiaWindow::DrawThreadJumper);
+  uv_async_init(uv_default_loop(), &event_async_, &SkiaWindow::EventThreadJumper);
 }
 
 SkiaWindow::~SkiaWindow() {
@@ -223,11 +266,10 @@ SkiaWindow::~SkiaWindow() {
 }
 
 NAN_METHOD(SkiaWindow::onMainLoopEnd) {
-  std::cout << "SkiaWindow::onMainLoopEnd" << std::endl;
 }
 
 void SkiaWindow::Start() {
-  if (!backend_) {
+  if (!egl_interface_) {
     Nan::ThrowError("No backend for window !");
     return;
   }
@@ -235,7 +277,8 @@ void SkiaWindow::Start() {
   v8::Local<v8::Function> fn = Nan::New<v8::FunctionTemplate>(SkiaWindow::onMainLoopEnd)->GetFunction();
 
   running_ = true;
-  loop_ = new MainLoop(new Nan::Callback(fn), backend_, this, width_, height_);
+  loop_ = new MainLoop(new Nan::Callback(fn), egl_interface_, this,
+                       &draw_mutex_, width_, height_);
   Nan::AsyncQueueWorker(loop_);
 }
 
@@ -249,15 +292,16 @@ void SkiaWindow::Stop() {
 }
 
 void SkiaWindow::Release() {
-  if (backend_) {
-    delete backend_;
-    backend_ = NULL;
+  if (egl_interface_) {
+    delete egl_interface_;
+    egl_interface_ = NULL;
   }
 
-  AsyncData* data = (AsyncData*)async_.data;
-  delete data;
+  delete ((DrawAsyncData*)draw_async_.data);
+  delete ((EventAsyncData*)event_async_.data);
 
-  uv_close((uv_handle_t*)&async_, NULL);
+  uv_close((uv_handle_t*)&draw_async_, NULL);
+  uv_close((uv_handle_t*)&event_async_, NULL);
 }
 
 void SkiaWindow::SetDrawHandler(v8::Local<v8::Function> handler) {
@@ -266,26 +310,95 @@ void SkiaWindow::SetDrawHandler(v8::Local<v8::Function> handler) {
 }
 
 void SkiaWindow::Draw(SkCanvas *canvas) {
-  if (has_draw_handler_ || view_) {
-    ((AsyncData*)async_.data)->canvas = canvas;
-    uv_async_send(&async_);
-    uv_cond_wait(&cond_, &mutex_);
+  if (has_draw_handler_) {
+    ((DrawAsyncData*)draw_async_.data)->canvas = canvas;
+    uv_async_send(&draw_async_);
+    uv_cond_wait(&draw_cond_, &draw_cond_mutex_);
   }
-}
 
-void SkiaWindow::CallDrawHandler(SkCanvas *canvas) {
   if (view_)
     view_->Draw(canvas);
+}
 
+void SkiaWindow::CallDrawHandlerOnNodeThread(SkCanvas *canvas) {
+  uv_mutex_lock(&draw_mutex_);
   if (has_draw_handler_) {
     Nan::HandleScope scope;
     v8::Local<v8::Value> argv[] = { SkiaCanvas::CreateObject(canvas) };
     draw_handler_.Call(1, argv);
   }
 
-  uv_cond_signal(&cond_);
+  uv_cond_signal(&draw_cond_);
+  uv_mutex_unlock(&draw_mutex_);
 }
 
 void SkiaWindow::SetView(v8::Local<v8::Object> view) {
   view_ = Nan::ObjectWrap::Unwrap<SkiaView>(view);
+}
+
+void SkiaWindow::AddEventHandler(std::string name, v8::Local<v8::Function> handler) {
+  uv_mutex_lock(&event_mutex_);
+  event_handlers_[name].push_back(new Nan::Callback(handler));
+  uv_mutex_unlock(&event_mutex_);
+}
+
+void SkiaWindow::RemoveEventHandler(std::string name, v8::Local<v8::Function> handler) {
+  uv_mutex_lock(&event_mutex_);
+
+  if (event_handlers_.find(name) == event_handlers_.end()) {
+    uv_mutex_unlock(&event_mutex_);
+    return;
+  }
+
+  for (EventHandlerVector::iterator it = event_handlers_[name].begin();
+       it != event_handlers_[name].end(); ++it) {
+    if (*(*(*it)) == handler) {
+      event_handlers_[name].erase(it);
+      delete (*it);
+      break;
+    }
+  }
+
+  uv_mutex_unlock(&event_mutex_);
+}
+
+void SkiaWindow::EmitEvent(EGLNativeInterface::Event* event) {
+    ((EventAsyncData*)event_async_.data)->event = event;
+    uv_async_send(&event_async_);
+}
+
+void SkiaWindow::CallEventHandlersOnNodeThread(EGLNativeInterface::Event* event) {
+  if (!event)
+    return;
+
+  const std::string name = event->GetName();
+
+  uv_mutex_lock(&event_mutex_);
+
+  if (event_handlers_.find(name) != event_handlers_.end()) {
+    Nan::HandleScope scope;
+    v8::Local<v8::Value> argv[] = { event->GetData() };
+
+    for (EventHandlerVector::iterator it = event_handlers_[name].begin();
+       it != event_handlers_[name].end(); ++it) {
+      (*it)->Call(1, argv);
+    }
+  }
+
+  uv_mutex_unlock(&event_mutex_);
+
+  delete event;
+}
+
+void SkiaWindow::ClearEventHandlers() {
+  uv_mutex_lock(&event_mutex_);
+  for (std::map<std::string, EventHandlerVector>::iterator it = event_handlers_.begin();
+       it != event_handlers_.end(); ++it) {
+    for (EventHandlerVector::iterator jt= it->second.begin();
+         jt != it->second.end(); ++jt) {
+      delete (*jt);
+    }
+    it->second.clear();
+  }
+  uv_mutex_unlock(&event_mutex_);
 }

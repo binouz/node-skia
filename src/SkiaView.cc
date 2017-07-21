@@ -7,22 +7,29 @@ class SkiaView::SkiaViewTreeImpl : public SkiaView::Tree,
   public:
 
     SkiaViewTreeImpl(SkColor background_color)
-      : background_color_(background_color) {}
+      : background_color_(background_color) {
+      uv_mutex_init(&mutex_);
+    }
     ~SkiaViewTreeImpl() {}
 
     void Draw(SkCanvas *canvas) {
+      uv_mutex_lock(&mutex_);
       canvas->drawColor(background_color_);
       SkiaViewElement::Draw(canvas);
+      uv_mutex_unlock(&mutex_);
     }
 
     void Update(v8::Local<v8::Object> tree) {
+      uv_mutex_lock(&mutex_);
       SkiaViewElement::Update(tree);
+      uv_mutex_unlock(&mutex_);
     }
 
   private:
 
     SkColor background_color_;
 
+    uv_mutex_t mutex_;
 };
 
 NAN_MODULE_INIT(SkiaView::Init) {

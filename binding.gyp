@@ -43,7 +43,7 @@
         'src/SkiaView.cc',
         'src/SkiaViewElement.cc',
         'src/SkiaViewStyle.cc',
-        'src/EGLNativeBackend.cc',
+        'src/EGLNativeInterface.cc',
       ],
     },
   ],

@@ -25,6 +25,8 @@ class SkiaViewElement {
 
   private:
 
+    SkiaViewElement(v8::Local<v8::Object> obj);
+
     virtual void DrawElement(SkCanvas *canvas);
     virtual void UpdateElement(v8::Local<v8::Object> obj);
 

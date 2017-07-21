@@ -1,13 +1,15 @@
 #include "SkiaViewElement.h"
 #include "V8Utils.h"
 
-// #include "SkiaElements.cc"
-
 SkiaViewElement *SkiaViewElement::CreateElement(v8::Local<v8::Object> obj) {
-  return new SkiaViewElement();
+  return new SkiaViewElement(obj);
 }
 
 SkiaViewElement::SkiaViewElement() {
+}
+
+SkiaViewElement::SkiaViewElement(v8::Local<v8::Object> obj) {
+  Update(obj);
 }
 
 SkiaViewElement::~SkiaViewElement() {

@@ -32,7 +32,8 @@ class SkiaView : public Nan::ObjectWrap {
         virtual void Draw(SkCanvas *canvas) = 0;
         virtual void Update(v8::Local<v8::Object> tree) = 0;
 
-        virtual ~Tree() = 0;
+        Tree() {}
+        virtual ~Tree() {}
     };
 
     class SkiaViewTreeImpl;
