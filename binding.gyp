@@ -44,7 +44,8 @@
       'sources' : [
         'src/init.cc',
         'src/SkiaWindow.cc',
-        'src/SkiaCanvas.cc',
+        'src/canvas/SkiaCanvas.cc',
+        'src/canvas/SkiaPaint.cc',
         'src/view/SkiaView.cc',
         'src/view/SkiaViewNode.cc',
         'src/view/SkiaViewStyle.cc',

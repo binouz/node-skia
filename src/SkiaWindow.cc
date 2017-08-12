@@ -1,5 +1,5 @@
 #include "SkiaWindow.h"
-#include "SkiaCanvas.h"
+#include "canvas/SkiaCanvas.h"
 
 #include <gl/GrGLInterface.h>
 #include <gl/GrGLDefines.h>
