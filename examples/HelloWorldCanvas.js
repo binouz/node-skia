@@ -16,13 +16,11 @@
 var Skia = require("../build/Release/skia");
 
 var Window = Skia.Window;
-var paint = new Skia.Canvas.Paint({
-});
-
 var win = new Window(1280, 720);
 
 win.setDrawHandler(function(canvas) {
-    canvas.
+    canvas.drawColor(0xFFFFFFFF);
+    canvas.drawText(0xFF000000, 100, 100, "Hello World !");
 });
 
 win.start();
